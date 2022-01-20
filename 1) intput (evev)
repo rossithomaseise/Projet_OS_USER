@@ -1,0 +1,38 @@
+1) intput (evev)
+2) mise à jour
+mise à jour graph
+
+./server 32000
+./sh13 localhost 32000 localhost 32001 // server principal server tcp à nous
+
+4 joueurs et 1 serveur principal
+joueur a 2 pts (client et réseau local )
+diagramme UML de séquence (selon le temps)
+0) serveur lancé, s'exécute, se bloque à l'appel system accept
+1) J1 se connecte message qui part de son réseau local au serveur principal
+"connexion localhost 32002 bob" -> "C localhost 32002 bob"
+2) après accept, stocke dans struct données slot(localhost 32001 bob)
+3) envoie msg au réseau local d'un joueur
+"msg identifiant joueur" "I n°id" --> msg individuel
+4) envoie 2eme msg pour communiquer à tous les jouerus connectés
+"L bob vide vide vide" --> encore 3 places --> broadcast = parcours liste joueur du server et envoie msg
+
+5) Alice se connecte : "C localhost 32001 alice"
+6) ajoute 2ème entrée dans liste joueur
+7) "I 1"
+8) "L bob Alice - -" a 2 joueurs
+
+1ere action : demander à tout le monde : "est ce que vous avez ce symbole"
+a cet ligne la et colonne la (sauf celle du joueur)
+
+2eme action : demander à un joueur combien il en a
+
+3eme action : dire quel joueur est coupable ? eliminé si non
+
+./sh13 localhost 30000 localhost 30001 thomas
+./sh13 localhost 30000 localhost 30002 fred
+./sh13 localhost 30000 localhost 30003 daniel
+./sh13 localhost 30000 localhost 30004 caro
+
+./cmd.sh
+./server 30000
