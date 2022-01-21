@@ -24,10 +24,14 @@ char *nomcartes[]=
   "inspector Gregson", "inspector Baynes", "inspector Bradstreet",
   "inspector Hopkins", "Sherlock Holmes", "John Watson", "Mycroft Holmes",
   "Mrs. Hudson", "Mary Morstan", "James Moriarty"};
-int joueurCourant; // (joueurCourant+1)%joueurCourant
+int joueurCourant;
 
-char com; int gid; int indice_colonne; // variables pour le scanf du "O"
+char com; int gid; int indice_colonne;char indice_colonne_char[255]; // variables pour le scanf du "O"
 int indice_ligne;char indice_colonne_char2[255]; // variables pour le scanf du "S"
+int indice_coupable; // variable pour le scanf du "G"
+// variable qui se met à 1 lorsqu'une personne est éliminée, cad qu'elle a trouvé le mauvais coupable.
+// on passera son tour si la personne est éliminée, mais elle doit toujours répondre aux questions
+int elimine[4] = {-1,-1,-1,-1}; 
 void error(const char *msg)
 {
     perror(msg);
@@ -357,33 +361,77 @@ int main(int argc, char *argv[])
 		switch (buffer[0])
 		{
                 	case 'G': // coupable
-				// RAJOUTER DU CODE ICI
+				        // RAJOUTER DU CODE ICI (OK)
+                        
+                        sscanf(buffer,"%c %d %d",&com,&gid,&indice_coupable);
+                        // si on a trouvé le coupable
+                        if(indice_coupable == deck[12]){ // le coupable est la dernière carte du deck mélangé
+                            memset(reply,0,255);
+                            strcat(reply,tcpClients[gid].name);
+                            strcat(reply," a trouvé le coupable. C'est : ");
+                            strcat(reply,nomcartes[deck[12]]);
+                            strcat(reply,"\nFin de la partie !");
+                            broadcastMessage(reply);
+                            // on envoie à chaque client le message F pour que les joueurs ferment leur connexion
+                            sprintf(reply,"F");
+                            broadcastMessage(reply);
+                            // on quitte le serveur
+                            close(newsockfd);
+                            close(sockfd);
+                            return 0;
+                        // si on s'est trompé de coupable, on est éliminé et le jeu continue
+                        }else{
+                            // si tous les joueurs sont éliminés, on quitte le programme
+                            if(elimine[0] ==1 && elimine[1]==1 && elimine[2]==1 && elimine[3]==1){
+                                // on envoie à chaque client le message F pour que les joueurs ferment leur connexion
+                                memset(reply,0,255);
+                                strcat(reply,"Tous les joueurs sont éliminés. Fin de la partie !");
+                                sprintf(reply,"F");
+                                broadcastMessage(reply);
+                                // on quitte le serveur
+                                close(newsockfd);
+                                close(sockfd);
+                                return 0;
+                            }
+                            elimine[gid] = 1; // la personne est éliminée
+                            // on passe au joueur suivant en vérifiant qu'il n'est pas éliminé
+                            joueurCourant = (joueurCourant+1)%4;
+                            while(elimine[joueurCourant] == 1){
+                                joueurCourant = (joueurCourant+1)%4;
+                            }
+                            memset(reply,0,255);
+                            strcat(reply,tcpClients[gid].name);
+                            strcat(reply," a désigné le mauvais coupable. Il est éliminé");
+                            broadcastMessage(reply);
+                            memset(reply,0,255);
+                            sprintf(reply,"M %d",joueurCourant);
+                            broadcastMessage(reply);
+                        }
 				break;
                 	case 'O': // demander à tout le monde : "est ce que vous avez ce symbole"
-				        // RAJOUTER DU CODE ICI
-                        // sprintf(sendBuffer,"O %d %d",gId, objetSel); // SERT A QUOI gID
-                        
+				        // RAJOUTER DU CODE ICI (OK)                    
                         sscanf(buffer,"%c %d %d",&com,&gid,&indice_colonne);
-                        char reply_bis[255]; char indice_colonne_char[255];
-                        memset(reply_bis,0,255);memset(indice_colonne_char,0,255);
+                        
+                        memset(indice_colonne_char,0,255);
                         for(int i=0;i<4;i++){
                             if(i != gid && tableCartes[i][indice_colonne] > 0){
-                                strcat(reply_bis,tcpClients[i].name);
-                                strcat(reply_bis," a bien le symbole ");
+                                strcat(reply,tcpClients[i].name);
+                                strcat(reply," a bien le symbole ");
                                 sprintf(indice_colonne_char,"%d",indice_colonne);
-                                strcat(reply_bis,indice_colonne_char);
+                                strcat(reply,indice_colonne_char);
                             }
                         }
-                        broadcastMessage(reply_bis);
-
+                        broadcastMessage(reply);
+                        // on passe au joueur suivant en vérifiant qu'il n'est pas éliminé
                         joueurCourant = (joueurCourant+1)%4;
+                        while(elimine[joueurCourant] == 1){
+                            joueurCourant = (joueurCourant+1)%4;
+                        }
                         sprintf(reply,"M %d",joueurCourant);
                         broadcastMessage(reply);
 				break;
 			case 'S': // demander à un joueur combien il en a
-				// RAJOUTER DU CODE ICI
-                // sprintf(sendBuffer,"S %d %d %d",gId, joueurSel,objetSel);                
-
+				// RAJOUTER DU CODE ICI (OK)  
                 sscanf(buffer,"%c %d %d %d",&com,&gid,&indice_ligne,&indice_colonne);
                 memset(reply,0,255);
                 strcat(reply,tcpClients[indice_ligne].name);
@@ -395,9 +443,12 @@ int main(int argc, char *argv[])
                 strcat(reply,indice_colonne_char2);
 
                 broadcastMessage(reply);
-
+                // on passe au joueur suivant en vérifiant qu'il n'est pas éliminé
                 joueurCourant = (joueurCourant+1)%4;
-
+                while(elimine[joueurCourant] == 1){
+                    joueurCourant = (joueurCourant+1)%4;
+                }
+                // on actualise la case du tableau pour tous les joueurs
                 sprintf(reply,"V %d %d %d",indice_ligne,indice_colonne,tableCartes[indice_ligne][indice_colonne]);
                 broadcastMessage(reply);
 

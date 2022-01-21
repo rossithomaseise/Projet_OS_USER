@@ -274,7 +274,6 @@ int main(int argc, char ** argv)
 					if (guiltSel!=-1)
 					{
 						sprintf(sendBuffer,"G %d %d",gId, guiltSel); // on pense avoir trouvé le coupable
-
 						// RAJOUTER DU CODE ICI (OK)
 						sendMessageToServer(gServerIpAddress,gServerPort,sendBuffer);
 					}
@@ -315,21 +314,21 @@ int main(int argc, char ** argv)
 		{
 			// Message 'I' : le joueur recoit son Id
 			case 'I':
-			
 				// RAJOUTER DU CODE ICI (ok)
 				sscanf(gbuffer,"%c %d",&com,&gId);
-				printf("on a comme ID %d\n",gId);
+				//printf("on a comme ID %d\n",gId);
 				break;
 			// Message 'L' : le joueur recoit la liste des joueurs
 			case 'L':
 				// RAJOUTER DU CODE ICI (ok)
 				sscanf(gbuffer,"%c %s %s %s %s",&com,gNames[0],gNames[1],gNames[2],gNames[3]);
-				printf("on a comme joueur : \n");
+				//printf("on a comme joueur : \n");
 				for(int i=0;i<4;i++) printf("%s\n",gNames[i]);
 				break;
 			// Message 'D' : le joueur recoit ses trois cartes
 			case 'D':
 				// RAJOUTER DU CODE ICI (OK)
+				// on remplit nos cartes avec b[x] et on actualise notre ligne du tableau
 				sscanf(gbuffer,"%c %d %d %d %d %d %d %d %d %d %d %d",&com,&b[0],&b[1],&b[2],&tableCartes[gId][0],&tableCartes[gId][1],&tableCartes[gId][2],
 					&tableCartes[gId][3],&tableCartes[gId][4],&tableCartes[gId][5],&tableCartes[gId][6],&tableCartes[gId][7]);
 				break;
@@ -344,9 +343,12 @@ int main(int argc, char ** argv)
 			// Message 'V' : le joueur recoit une valeur de tableCartes
 			case 'V': // a la coordonnee x et y,  voila la valeur
 				// RAJOUTER DU CODE ICI (OK)
-				// sprintf(reply,"V %d %d %d",indice_ligne,indice_colonne,tableCartes[indice_ligne][indice_colonne]);
+				// on actualise la ligne du tableau
 				sscanf(gbuffer,"%c %d %d %d",&com,&indice_ligne,&indice_colonne,&valeurTab);
 				tableCartes[indice_ligne][indice_colonne] = valeurTab;
+				break;
+			case 'F' : // fin du jeu
+				quit = 1;
 				break;
 		}
 		synchro=0;
